@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
-import { Menu, Sun, Trash2, Edit2, PlusCircle } from 'lucide-react'
+import { Sun, Trash2, Edit2, PlusCircle } from 'lucide-react'
 
 // New App.jsx implements multi-profile support, per-profile workouts, templates, PRs, rest timer, import/export, edit/delete, and migration
 
@@ -334,7 +334,6 @@ export default function App(){
 
       <header className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Menu className="w-6 h-6 text-white/80" />
           <h1 className="text-2xl font-semibold">Fitness Workout Tracker</h1>
         </div>
 
@@ -558,13 +557,7 @@ export default function App(){
             </div>
           </div>
 
-          <div className="glass p-4 rounded-md">
-            <h3 className="text-lg font-medium mb-3">Quick Actions</h3>
-            <div className="flex flex-col gap-2">
-              <button onClick={()=>setTab('Log Workout')} className="px-3 py-2 bg-slate-700 rounded-md">Log Workout</button>
-              <button onClick={()=>setShowProfileSelector(true)} className="px-3 py-2 bg-slate-700 rounded-md">Switch Profile</button>
-            </div>
-          </div>
+          {/* Quick Actions removed per request; keeping sidebar compact */}
         </aside>
       </main>
 
@@ -666,11 +659,12 @@ function ExerciseProgressChart({ workouts }){
 
 // Cardio progress charts: per cardio type (running, cycling, etc.) show distance and time/pace
 function CardioProgressCharts({ workouts }){
+  // Build grouped cardio data by type and provide a dropdown to select one
   const cardioByType = useMemo(()=>{
     const map = {}
     workouts.slice().reverse().forEach(w => {
       if (w.type !== 'cardio') return
-      const t = w.cardioType || 'other'
+      const t = (w.cardioType || 'other').toLowerCase()
       if (!map[t]) map[t] = []
       const dist = Number(w.distance) || null
       const time = Number(w.time) || null
@@ -682,28 +676,40 @@ function CardioProgressCharts({ workouts }){
   }, [workouts])
 
   const types = Object.keys(cardioByType)
-  if (types.length === 0) return <div className="text-sm text-slate-300">Log 2+ cardio sessions to see progress.</div>
+  const [selectedType, setSelectedType] = useState(types[0] || '')
+
+  // keep selectedType in sync if types change
+  useEffect(()=>{ if (!types.includes(selectedType)) setSelectedType(types[0]||'') }, [types])
+
+  if (!types || types.length === 0) return <div className="text-sm text-slate-300">Log 2+ cardio sessions to see progress.</div>
+
+  const displayName = selectedType.charAt(0).toUpperCase() + selectedType.slice(1)
 
   return (
-    <div className="space-y-6">
-      {types.map(t => (
-        <div key={t} className="glass p-4 rounded-md">
-          <h4 className="font-semibold mb-2">{t} — Last {cardioByType[t].length} sessions</h4>
-          <div style={{ width: '100%', height: 260 }}>
+    <div>
+      <select value={selectedType} onChange={e=>setSelectedType(e.target.value)} className="p-2 rounded-md bg-transparent border border-white/10 mb-3">
+        {types.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
+      </select>
+
+      {selectedType && (
+        <div className="glass p-4 rounded-md">
+          <h4 className="font-semibold mb-2">{displayName} — Last {cardioByType[selectedType].length} sessions</h4>
+          <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <LineChart data={cardioByType[t]} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <LineChart data={cardioByType[selectedType]} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="date" />
-                <YAxis />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
                 <Tooltip />
-                <Line dataKey="distance" stroke="#8b5cf6" name="Distance (km)" />
-                <Line dataKey="time" stroke="#ec4899" name="Time (min)" />
-                <Line dataKey="pace" stroke="#06b6d4" name="Pace (min/km)" />
+                <Line yAxisId="left" dataKey="distance" stroke="#8b5cf6" name="Distance (km)" />
+                <Line yAxisId="right" dataKey="time" stroke="#ec4899" name="Time (min)" />
+                <Line yAxisId="right" dataKey="pace" stroke="#06b6d4" name="Pace (min/km)" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
-      ))}
+      )}
     </div>
   )
 }
