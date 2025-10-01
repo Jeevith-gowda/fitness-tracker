@@ -356,7 +356,7 @@ export default function App(){
       <nav className="flex gap-2 mb-6">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-3 py-2 rounded-md glass transition-smooth ${tab===t? 'ring-2':''}`} style={currentProfile? { boxShadow: `0 0 0 2px ${currentProfile.color}22` } : {}}>
-            {t}
+            {(t === 'Records' || t === 'Templates') ? 'TBD' : t}
           </button>
         ))}
       </nav>
@@ -379,35 +379,17 @@ export default function App(){
                       <input value={form.exercise} onChange={e=>setForm({...form, exercise:e.target.value})} className="w-full mt-1 p-2 rounded-md bg-transparent border border-white/10" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-sm">Body part</label>
-                        <select value={form.bodyPart} onChange={e=>setForm({...form, bodyPart:e.target.value})} className="w-full mt-1 p-2 rounded-md bg-transparent border border-white/10">
-                          <option>Chest</option>
-                          <option>Back</option>
-                          <option>Shoulders</option>
-                          <option>Arms</option>
-                          <option>Legs</option>
-                          <option>Core</option>
-                          <option>Full Body</option>
-                        </select>
-                      </div>
-                      <div className="flex items-end gap-2">
-                        <button type="button" onClick={() => {
-                          // suggest least trained body part in last 10
-                          const last10 = currentWorkouts.slice(0,10)
-                          const counts = { Chest:0, Back:0, Shoulders:0, Arms:0, Legs:0, Core:0, 'Full Body':0 }
-                          last10.forEach(w => { if (w.type==='gym' && w.bodyPart) counts[w.bodyPart] = (counts[w.bodyPart]||0)+1 })
-                          const sorted = Object.entries(counts).sort((a,b)=>a[1]-b[1])
-                          setForm(f => ({ ...f, bodyPart: sorted[0][0] }))
-                        }} className="px-2 py-1 bg-slate-700 rounded-md">Suggest</button>
-                        <button type="button" onClick={() => {
-                          // repeat last gym
-                          const last = currentWorkouts.find(w => w.type==='gym')
-                          if (!last) return toast('No previous gym workout')
-                          setForm({ exercise: last.exercise || '', bodyPart: last.bodyPart || 'Chest', sets: last.sets || '', reps: last.reps || '', weight: last.weight || '', duration: last.duration || '', notes: last.notes || '', feeling: last.feeling || 'good', cardioType: 'running', distance:'', time:'' })
-                        }} className="px-2 py-1 bg-slate-700 rounded-md">Repeat Last</button>
-                      </div>
+                    <div>
+                      <label className="block text-sm">Body part</label>
+                      <select value={form.bodyPart} onChange={e=>setForm({...form, bodyPart:e.target.value})} className="w-full mt-1 p-2 rounded-md bg-transparent border border-white/10">
+                        <option>Chest</option>
+                        <option>Back</option>
+                        <option>Shoulders</option>
+                        <option>Arms</option>
+                        <option>Legs</option>
+                        <option>Core</option>
+                        <option>Full Body</option>
+                      </select>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2">
@@ -522,44 +504,16 @@ export default function App(){
           )}
 
           {tab === 'Records' && (
-            <div className="glass p-4 rounded-md">
+            <div className="glass p-8 rounded-md">
               <h3 className="text-lg font-medium mb-3">Personal Records</h3>
-              <div className="space-y-2">
-                {Object.keys(records).length===0 && <div className="text-sm text-slate-300">No PRs yet.</div>}
-                {Object.entries(records).map(([ex, r])=> (
-                  <div key={ex} className="p-3 rounded-md bg-white/5 flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold">{ex}</div>
-                      <div className="text-sm text-slate-300">{r.weight} — {new Date(r.date).toLocaleDateString()}</div>
-                    </div>
-                    <div>
-                      <button onClick={() => { setTab('Progress'); /* could filter chart to exercise */ }} className="px-3 py-1 bg-slate-700 rounded-md">View History</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="text-sm text-slate-300">Coming soon!</div>
             </div>
           )}
 
           {tab === 'Templates' && (
-            <div className="glass p-4 rounded-md">
+            <div className="glass p-8 rounded-md">
               <h3 className="text-lg font-medium mb-3">Templates</h3>
-              <div className="space-y-2">
-                {(profileTemplates[currentProfileId]||[]).map(t => (
-                  <div key={t.id} className="p-3 rounded-md bg-white/5 flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold">{t.name}</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={()=>loadTemplate(t)} className="px-3 py-1 bg-slate-700 rounded-md">Load</button>
-                      <button onClick={()=>{
-                        setProfileTemplates(pt => ({ ...pt, [currentProfileId]: (pt[currentProfileId]||[]).filter(x=>x.id!==t.id) }))
-                        toast('Template deleted')
-                      }} className="px-3 py-1 bg-red-600 rounded-md">Delete</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <div className="text-sm text-slate-300">Coming soon!</div>
             </div>
           )}
 
@@ -609,7 +563,6 @@ export default function App(){
             <div className="flex flex-col gap-2">
               <button onClick={()=>setTab('Log Workout')} className="px-3 py-2 bg-slate-700 rounded-md">Log Workout</button>
               <button onClick={()=>setShowProfileSelector(true)} className="px-3 py-2 bg-slate-700 rounded-md">Switch Profile</button>
-              <button onClick={()=>startEditWorkout(currentWorkouts[0]||{})} className="px-3 py-2 bg-slate-700 rounded-md">Repeat Last</button>
             </div>
           </div>
         </aside>
