@@ -29,6 +29,8 @@ export default function App(){
 
   const [tab, setTab] = useState('Log Workout')
   const [showProfileSelector, setShowProfileSelector] = useState(false)
+  // selectedProfile controls initial flow: must select before accessing app
+  const [selectedProfile, setSelectedProfile] = useState(null)
 
   // Form state (we implement form here to support edit/update easily)
   const [type, setType] = useState('gym')
@@ -152,7 +154,9 @@ export default function App(){
     setProfiles(ps => [...ps, p])
     setProfileWorkouts(pw => ({ ...pw, [id]: [] }))
     setProfileTemplates(pt => ({ ...pt, [id]: [] }))
+    // set current profile and also mark it as selected so user enters app
     setCurrentProfileId(id)
+    setSelectedProfile(p)
     setShowProfileSelector(false)
     toast('Profile created')
   }
@@ -287,6 +291,17 @@ export default function App(){
 
   // UI helpers
   const currentProfile = profiles.find(p => p.id === currentProfileId) || null
+  // If no profile has been chosen yet, present full-screen ProfileSelectionScreen
+  if (!selectedProfile){
+    return (
+      <ProfileSelectionScreen
+        profiles={profiles}
+        profileWorkouts={profileWorkouts}
+        onCreate={(name,color,emoji)=>createProfile(name,color,emoji)}
+        onSelectProfile={(p)=>{ setSelectedProfile(p); setCurrentProfileId(p.id) }}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -326,10 +341,13 @@ export default function App(){
         <div className="flex items-center gap-3">
           {/* profile switcher */}
           {currentProfile && (
-            <button onClick={()=>setShowProfileSelector(true)} className="flex items-center gap-2 glass p-2 rounded-md" style={{ borderColor: currentProfile.color }}>
-              <span style={{ background: currentProfile.color }} className="w-6 h-6 flex items-center justify-center rounded-full">{currentProfile.emoji}</span>
-              <span className="font-medium">{currentProfile.name}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={()=>setShowProfileSelector(true)} className="flex items-center gap-2 glass p-2 rounded-md" style={{ borderColor: currentProfile.color }}>
+                <span style={{ background: currentProfile.color }} className="w-6 h-6 flex items-center justify-center rounded-full">{currentProfile.emoji}</span>
+                <span className="font-medium">{currentProfile.name}</span>
+              </button>
+              <button onClick={()=>{ setSelectedProfile(null); setTab('Log Workout') }} className="glass p-2 rounded-md">Switch Profile</button>
+            </div>
           )}
           <button className="glass p-2 rounded-md"><Sun className="w-5 h-5 text-yellow-300"/></button>
         </div>
@@ -490,9 +508,16 @@ export default function App(){
           )}
 
           {tab === 'Progress' && (
-            <div className="glass p-4 rounded-md">
-              <h3 className="text-lg font-medium mb-3">Progress Charts</h3>
-              <ExerciseProgressChart workouts={currentWorkouts} />
+            <div className="space-y-6">
+              <div className="glass p-4 rounded-md">
+                <h3 className="text-lg font-medium mb-3">Gym Exercise Progress (Last 10 workouts)</h3>
+                <ExerciseProgressChart workouts={currentWorkouts} />
+              </div>
+
+              <div className="glass p-4 rounded-md">
+                <h3 className="text-lg font-medium mb-3">Cardio Progress</h3>
+                <CardioProgressCharts workouts={currentWorkouts} />
+              </div>
             </div>
           )}
 
@@ -645,7 +670,12 @@ function ExerciseProgressChart({ workouts }){
       if (w.type !== 'gym' || !w.exercise) return
       const key = w.exercise
       if (!map[key]) map[key] = []
-      map[key].push({ date: new Date(w.date).toLocaleDateString(), weight: Number(w.weight) || null, reps: Number(w.reps) || null })
+      const sets = Number(w.sets) || 1
+      const reps = Number(w.reps) || 1
+      const weight = Number(w.weight) || 0
+      const volume = sets * reps
+      const totalLoad = weight * volume
+      map[key].push({ date: new Date(w.date).toLocaleDateString(), weight, volume, totalLoad })
     })
     Object.keys(map).forEach(k => { if (map[k].length < 2) delete map[k] })
     return map
@@ -660,7 +690,7 @@ function ExerciseProgressChart({ workouts }){
             {Object.keys(exercises).map(k => <option key={k} value={k}>{k}</option>)}
           </select>
           {selected && (
-            <div style={{ width: '100%', height: 300 }}>
+            <div style={{ width: '100%', height: 320 }}>
               <ResponsiveContainer>
                 <LineChart data={exercises[selected]} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
@@ -668,14 +698,83 @@ function ExerciseProgressChart({ workouts }){
                   <YAxis yAxisId="left" />
                   <YAxis yAxisId="right" orientation="right" />
                   <Tooltip />
-                  <Line yAxisId="left" type="monotone" dataKey="weight" stroke="#8884d8" activeDot={{ r: 8 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="reps" stroke="#82ca9d" />
+                  <Line yAxisId="left" type="monotone" dataKey="weight" stroke="#8884d8" activeDot={{ r: 8 }} name="Weight (lbs)" />
+                  <Line yAxisId="right" type="monotone" dataKey="volume" stroke="#ec4899" name="Volume (sets×reps)" />
+                  <Line yAxisId="right" type="monotone" dataKey="totalLoad" stroke="#06b6d4" name="Total Load" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// Cardio progress charts: per cardio type (running, cycling, etc.) show distance and time/pace
+function CardioProgressCharts({ workouts }){
+  const cardioByType = useMemo(()=>{
+    const map = {}
+    workouts.slice().reverse().forEach(w => {
+      if (w.type !== 'cardio') return
+      const t = w.cardioType || 'other'
+      if (!map[t]) map[t] = []
+      const dist = Number(w.distance) || null
+      const time = Number(w.time) || null
+      const pace = (dist && time) ? (time / dist) : null
+      map[t].push({ date: new Date(w.date).toLocaleDateString(), distance: dist, time: time, pace })
+    })
+    Object.keys(map).forEach(k => { if (map[k].length < 2) delete map[k] })
+    return map
+  }, [workouts])
+
+  const types = Object.keys(cardioByType)
+  if (types.length === 0) return <div className="text-sm text-slate-300">Log 2+ cardio sessions to see progress.</div>
+
+  return (
+    <div className="space-y-6">
+      {types.map(t => (
+        <div key={t} className="glass p-4 rounded-md">
+          <h4 className="font-semibold mb-2">{t} — Last {cardioByType[t].length} sessions</h4>
+          <div style={{ width: '100%', height: 260 }}>
+            <ResponsiveContainer>
+              <LineChart data={cardioByType[t]} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line dataKey="distance" stroke="#8b5cf6" name="Distance (km)" />
+                <Line dataKey="time" stroke="#ec4899" name="Time (min)" />
+                <Line dataKey="pace" stroke="#06b6d4" name="Pace (min/km)" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Full-screen Profile Selection Screen
+function ProfileSelectionScreen({ profiles, profileWorkouts, onCreate, onSelectProfile }){
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(135deg,#0f172a,#1e293b 40%, #7c3aed 100%)' }}>
+      <div className="w-full max-w-5xl bg-white/5 rounded-xl p-6">
+        <h2 className="text-2xl font-semibold mb-4 text-center">Select Profile</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {profiles.map(p => (
+            <div key={p.id} onClick={()=>onSelectProfile(p)} className="p-6 rounded-xl cursor-pointer hover:scale-105 transition-transform" style={{ background: `linear-gradient(135deg, ${p.color}33, #00000022)` }}>
+              <div className="text-4xl">{p.emoji}</div>
+              <div className="font-semibold text-xl mt-2">{p.name}</div>
+              <div className="text-sm text-slate-300 mt-1">{(profileWorkouts[p.id]||[]).length} total workouts</div>
+            </div>
+          ))}
+          <div className="p-6 rounded-xl flex flex-col items-center justify-center border-dashed border-2 border-white/10">
+            <div className="mb-2">Create New Profile</div>
+            <AddProfileForm onCreate={(name,color,emoji)=>onCreate(name,color,emoji)} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
