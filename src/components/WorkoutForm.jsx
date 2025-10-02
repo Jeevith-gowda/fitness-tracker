@@ -76,8 +76,8 @@ export default function WorkoutForm({ onAdd, suggestNextBodyPart, workouts }){
     <div className="glass p-4 rounded-md">
       <h2 className="text-xl font-semibold mb-3">Log Workout</h2>
       <div className="flex gap-2 mb-4">
-        <button onClick={()=>setType('gym')} className={`px-3 py-2 rounded-md ${type==='gym' ? 'bg-purple-600':''}`}>Gym</button>
-        <button onClick={()=>setType('cardio')} className={`px-3 py-2 rounded-md ${type==='cardio' ? 'bg-purple-600':''}`}>Cardio</button>
+  <button onClick={()=>setType('gym')} className={`px-3 py-2 rounded-md ${type==='gym' ? 'bg-sky-400 text-white':''}`}>Gym</button>
+  <button onClick={()=>setType('cardio')} className={`px-3 py-2 rounded-md ${type==='cardio' ? 'bg-sky-400 text-white':''}`}>Cardio</button>
       </div>
 
       <form onSubmit={submit} className="space-y-3">
@@ -149,7 +149,7 @@ export default function WorkoutForm({ onAdd, suggestNextBodyPart, workouts }){
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="px-4 py-2 bg-purple-600 rounded-md" type="submit">Add Workout</button>
+          <button className="px-4 py-2 bg-sky-400 text-white rounded-md" type="submit">Add Workout</button>
           <button type="button" onClick={()=>{
             setForm({ exercise: '', bodyPart: 'Chest', sets: '', reps: '', weight: '', duration: '', notes: '', feeling: 'good', cardioType: 'running', distance: '', time: '' })
           }} className="px-3 py-2 bg-slate-700 rounded-md">Reset</button>
