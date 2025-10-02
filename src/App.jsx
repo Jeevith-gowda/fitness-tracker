@@ -7,7 +7,7 @@ import { Sun, Trash2, Edit2, PlusCircle } from 'lucide-react'
 const STORAGE_KEY = 'fitnessTrackerStore' // new combined key
 const LEGACY_KEY = 'fitnessTrackerWorkouts' // old key to migrate
 
-const TABS = ['Log Workout', 'History', 'Progress', 'Records', 'Templates']
+const TABS = ['Log Workout', 'History', 'Progress', 'Body Analysis', 'TBD', 'TBD', 'Records', 'Templates']
 
 function uid(prefix = ''){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,8) }
 
@@ -499,6 +499,27 @@ export default function App(){
                 <h3 className="text-lg font-medium mb-3">Cardio Progress</h3>
                 <CardioProgressCharts workouts={currentWorkouts} />
               </div>
+            </div>
+          )}
+
+          {tab === 'Body Analysis' && (
+            <div className="glass p-8 rounded-md">
+              <h3 className="text-lg font-medium mb-3">Body Analysis</h3>
+              <div className="text-sm text-slate-300">Body Analysis - Coming Soon!</div>
+            </div>
+          )}
+
+          {tab === 'TBD' && (
+            <div className="glass p-8 rounded-md">
+              <h3 className="text-lg font-medium mb-3">Feature</h3>
+              <div className="text-sm text-slate-300">Feature Coming Soon!</div>
+            </div>
+          )}
+
+          {tab === 'TBD' && (
+            <div className="glass p-8 rounded-md">
+              <h3 className="text-lg font-medium mb-3">Feature</h3>
+              <div className="text-sm text-slate-300">Feature Coming Soon!</div>
             </div>
           )}
 
